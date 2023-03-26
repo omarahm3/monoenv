@@ -2,7 +2,11 @@
   "name": "monoenv",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "./dist/index.js",
+  "bin": {
+    "monoenv": "./dist/bin/run.js"
+  },
+  "preferGlobal": true,
   "scripts": {
     "build": "tsc",
     "test": "ts-node ./src/index.ts"
