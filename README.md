@@ -16,6 +16,93 @@ On your monorepo root, run:
 npm i -D monoenv
 ```
 
+## Why
+
+Handling dotenv files in monorepos for me is a bit of pain especaially whe it comes to deployment. Since at least for [turborepo](https://turbo.build/repo/docs/handbook/environment-variables) you're expected to have a single `.env` file that is shared between all of your projects, while this is fine for development, i didn't want to have this while deploying and building my projects' docker images.
+
+I wanted to have a single `.env` file per project, that i could feed to my docker build or docker run commands.
+
+#### Before
+
+I would have a shared `.env` file at the root of my application that contains all environement variables for my 3 services and 1 frontend application, during deployment i would have to pass the `.env` file to frontend image build command and to my running services too.
+
+```yaml
+version: "3.2"
+
+services:
+  frontend:
+    container_name: frontend
+    image: frontend
+    build: 
+      context: .
+      dockerfile: ./apps/frontend/Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL}
+    env_file: ./.env # ---- here
+    restart: always
+
+  server:
+    container_name: server
+    image: server
+    build: 
+      context: .
+      dockerfile: ./apps/api/Dockerfile
+    env_file: ./.env # ---- here
+    restart: always
+
+  uploader:
+    container_name: uploader
+    image: uploader
+    build: 
+      context: .
+      dockerfile: ./apps/uploader/Dockerfile
+    env_file: ./.env # ---- here
+    restart: always
+```
+
+Notice how i'm using the same `.env` file for all of my services.
+
+#### After
+
+Separation of concerns is a good thing. Now i have a single `.env` file for each project and can be easilly fed to docker
+
+```yaml
+version: "3.2"
+
+services:
+  frontend:
+    container_name: frontend
+    image: frontend
+    build: 
+      context: .
+      dockerfile: ./apps/frontend/Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL}
+    restart: always
+    env_file: ./.frontend.env # ---- here
+
+  server:
+    container_name: server
+    image: server
+    build: 
+      context: .
+      dockerfile: ./apps/api/Dockerfile
+    env_file: ./.server.env # ---- here
+    restart: always
+
+  uploader:
+    container_name: uploader
+    image: uploader
+    build: 
+      context: .
+      dockerfile: ./apps/uploader/Dockerfile
+    env_file: ./.uploader.env # ---- here
+    restart: always
+```
+
+So the reason i created this so i don't worry more about `.env` files no more, i just have a single `.monoenv.yaml` file that i keep maintaining and do not care anymore about my environment since `monoenv` will take care of generating all the files needed and i have to prepare my deployment scripts and applications accordingly.
+
+
 ## Usage
 
 Create a `.monoenv.yaml` file in your project root directory:
