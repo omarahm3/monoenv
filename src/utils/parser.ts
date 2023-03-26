@@ -41,11 +41,17 @@ export function createProjectMap(raw: ProjectMap) {
 }
 
 export function prepareSingleEnvFile(opts: EnvFileOptions) {
+  const keys = new Set<string>();
   let content = "";
 
   for (const [_, variables] of opts.variables) {
     for (const [key, value] of variables) {
+      if (keys.has(key)) {
+        continue;
+      }
+
       content += `${key}="${value}"\n`;
+      keys.add(key);
     }
   }
 

@@ -1,6 +1,6 @@
 {
   "name": "monoenv",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "better handling of multiple applications dotenv files in monorepos",
   "author": "omarahm3",
   "repository": "https://github.com/omarahm3/monoenv",
