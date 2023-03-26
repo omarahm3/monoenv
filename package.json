@@ -1,16 +1,23 @@
 {
   "name": "monoenv",
   "version": "1.0.0",
-  "description": "",
-  "main": "./dist/index.js",
+  "description": "better handling of multiple applications dotenv files in monorepos",
+  "author": "omarahm3",
+  "repository": "https://github.com/omarahm3/monoenv",
+  "homepage": "https://github.com/omarahm3/monoenv",
+  "license": "MIT",
+  "main": "./lib/index.js",
   "bin": {
-    "monoenv": "./dist/bin/run.js"
+    "monoenv": "./lib/bin/run.js"
   },
   "preferGlobal": true,
   "scripts": {
     "build": "tsc",
     "test": "ts-node ./src/index.ts"
   },
+  "files": [
+    "./lib/**/*"
+  ],
   "keywords": [],
   "author": "",
   "license": "ISC",

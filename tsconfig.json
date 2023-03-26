@@ -5,7 +5,7 @@
   "exclude": [
     "node_modules",
     ".git",
-    "dist"
+    "lib"
   ],
   "compilerOptions": {
     "lib": [
@@ -16,7 +16,7 @@
     "allowJs": false,
     "declaration": true,
     "emitDeclarationOnly": false,
-    "outDir": "dist",
+    "outDir": "lib",
     "declarationMap": true,
     "moduleResolution": "node",
     "esModuleInterop": true,
