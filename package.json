@@ -13,7 +13,7 @@
   "preferGlobal": true,
   "scripts": {
     "build": "tsc",
-    "test": "ts-node ./src/index.ts",
+    "test": "ts-node ./src/bin/run.ts",
     "prepublish": "npm run build"
   },
   "files": [
