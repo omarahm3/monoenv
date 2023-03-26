@@ -73,6 +73,18 @@ You can always use different name for your monoenv config file, then you can sup
 monoenv --config project.production.yaml
 ```
 
+## In code
+
+Although not really recommended and is not its purpose, just like you're calling `dotenv.config()` as early as possible in your application, you can call `monoenv.loadEnv` or `monoenv.loadEnvFromConfigFile` **before** calling `dotenv.config` to parse and create the needed dotenv files.
+
+```typescript
+import monoenv from "monoenv";
+import * as dotenv from "dotenv";
+monoenv.loadEnvFromConfigFile(".monoenv.yaml");
+// monoenv.loadEnv(); // To load .monoenv.yaml|yml file by default
+dotenv.config();
+```
+
 # Use case
 
 Let's say you're woring on turborepo and you want to have a separate environment file for each application on production since this is the recommended way to do it. You have 3 applications api, image-uploader, and web
