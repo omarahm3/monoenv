@@ -9,9 +9,10 @@
   ],
   "compilerOptions": {
     "lib": [
-      "ESNext"
+      "ESNext",
     ],
     "target": "ESNext",
+    "module": "CommonJS",
     "allowJs": false,
     "declaration": true,
     "emitDeclarationOnly": false,

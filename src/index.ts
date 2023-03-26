@@ -19,5 +19,3 @@ export function loadEnvFromConfigFile(projectPath: string) {
 
   processProjectFile(projectPath);
 }
-
-loadEnv();
