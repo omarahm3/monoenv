@@ -5,8 +5,12 @@
   "exclude": [
     "node_modules",
     ".git",
-    "lib"
+    "lib",
+    "test"
   ],
+  "ts-node": {
+    "transpileOnly": true
+  },
   "compilerOptions": {
     "lib": [
       "ESNext",
