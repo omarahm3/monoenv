@@ -1,8 +1,8 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { processProjectFile } from "../src/processor";
-import { createSandbox } from "./helpers";
+import { processProjectFile } from "../src/processor.ts";
+import { createSandbox } from "./helpers.ts";
 
 describe("processProjectFile", () => {
   it("writes a single shared file to the default output", () => {
@@ -15,9 +15,9 @@ describe("processProjectFile", () => {
           "overwrite: true",
           "apps:",
           "  api:",
-          '    - NODE_ENV="production"',
+          "    NODE_ENV: production",
           "  web:",
-          "    - VITE_API_URL=localhost:5000",
+          "    VITE_API_URL: localhost:5000",
         ].join("\n")
       );
 
@@ -35,7 +35,7 @@ describe("processProjectFile", () => {
     try {
       const path = box.file(
         "cfg.yaml",
-        "shared: true\noverwrite: true\noutput: '.shared.env'\napps:\n  api:\n    - A=1\n"
+        "shared: true\noverwrite: true\noutput: '.shared.env'\napps:\n  api:\n    A: 1\n"
       );
 
       processProjectFile(path);
@@ -59,9 +59,9 @@ describe("processProjectFile", () => {
           "postfix: '.env'",
           "apps:",
           "  api:",
-          '    - PORT="3000"',
+          "    PORT: 3000",
           "  web:",
-          "    - VITE_API_URL=localhost:3000",
+          "    VITE_API_URL: localhost:3000",
         ].join("\n")
       );
 
@@ -82,7 +82,7 @@ describe("processProjectFile", () => {
     try {
       const path = box.file(
         "cfg.yaml",
-        "shared: false\noverwrite: true\napps:\n  api:\n    - A=1\n"
+        "shared: false\noverwrite: true\napps:\n  api:\n    A: 1\n"
       );
 
       processProjectFile(path);

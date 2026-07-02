@@ -1,12 +1,12 @@
-import { ProjectMap, VariablesMap } from "./types/index.js";
-import { loadConfigChain, writeEnvFile } from "./utils/fs.js";
+import type { ProjectMap, VariablesMap } from "./types/index.ts";
+import { loadConfigChain, writeEnvFile } from "./utils/fs.ts";
 import {
   createProjectMap,
   expandVariables,
   mergeVariables,
   prepareMultipleEnvFiles,
   prepareSingleEnvFile,
-} from "./utils/parser.js";
+} from "./utils/parser.ts";
 
 const OPTION_KEYS = [
   "shared",

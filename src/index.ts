@@ -1,5 +1,5 @@
-import { processProjectFile } from "./processor.js";
-import { fileExists, getProjectFile } from "./utils/fs.js";
+import { processProjectFile } from "./processor.ts";
+import { fileExists, getProjectFile } from "./utils/fs.ts";
 
 export function loadEnv() {
   const projectFile = getProjectFile();

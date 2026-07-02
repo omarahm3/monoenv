@@ -7,8 +7,8 @@ import {
   loadConfigChain,
   loadProjectFile,
   writeEnvFile,
-} from "../src/utils/fs";
-import { createSandbox, ExitError } from "./helpers";
+} from "../src/utils/fs.ts";
+import { createSandbox, ExitError } from "./helpers.ts";
 
 function expectExit(t: any) {
   const exit = t.mock.method(process, "exit", (code?: number) => {
@@ -19,7 +19,7 @@ function expectExit(t: any) {
 }
 
 describe("loadProjectFile", () => {
-  it("loads and returns a well-formed config", (t) => {
+  it("loads and returns a well-formed config", () => {
     const box = createSandbox();
     try {
       const path = box.file(
@@ -32,7 +32,7 @@ describe("loadProjectFile", () => {
           "postfix: '.env'",
           "apps:",
           "  api:",
-          '    - FOO="bar"',
+          "    FOO: bar",
           "  empty:",
         ].join("\n")
       );
@@ -40,7 +40,7 @@ describe("loadProjectFile", () => {
       const config = loadProjectFile(path);
       assert.equal(config.shared, true);
       assert.equal(config.output, ".env");
-      assert.deepEqual(config.apps.api, ['FOO="bar"']);
+      assert.deepEqual(config.apps!.api, { FOO: "bar" });
     } finally {
       box.restore();
     }
@@ -84,7 +84,7 @@ describe("loadProjectFile", () => {
     const box = createSandbox();
     try {
       expectExit(t);
-      const path = box.file("cfg.yaml", "shared: yep\napps:\n  api:\n    - A=1\n");
+      const path = box.file("cfg.yaml", "shared: yep\napps:\n  api:\n    A: 1\n");
       assert.throws(() => loadProjectFile(path), ExitError);
     } finally {
       box.restore();
@@ -97,7 +97,7 @@ describe("loadProjectFile", () => {
       expectExit(t);
       const path = box.file(
         "cfg.yaml",
-        "shared: true\noverwrite: 5\napps:\n  api:\n    - A=1\n"
+        "shared: true\noverwrite: 5\napps:\n  api:\n    A: 1\n"
       );
       assert.throws(() => loadProjectFile(path), ExitError);
     } finally {
@@ -109,7 +109,7 @@ describe("loadProjectFile", () => {
     const box = createSandbox();
     try {
       expectExit(t);
-      const path = box.file("cfg.yaml", "output: 5\napps:\n  api:\n    - A=1\n");
+      const path = box.file("cfg.yaml", "output: 5\napps:\n  api:\n    A: 1\n");
       assert.throws(() => loadProjectFile(path), ExitError);
     } finally {
       box.restore();
@@ -138,18 +138,18 @@ describe("loadProjectFile", () => {
     }
   });
 
-  it("allows an app defined with no variables", (t) => {
+  it("allows an app defined with no variables", () => {
     const box = createSandbox();
     try {
       const path = box.file("cfg.yaml", "apps:\n  api:\n");
       const config = loadProjectFile(path);
-      assert.equal(config.apps.api, null);
+      assert.equal(config.apps!.api, null);
     } finally {
       box.restore();
     }
   });
 
-  it("rejects an app whose value is not a list", (t) => {
+  it("rejects an app defined as a scalar", (t) => {
     const box = createSandbox();
     try {
       expectExit(t);
@@ -160,18 +160,18 @@ describe("loadProjectFile", () => {
     }
   });
 
-  it("rejects an app whose list contains non-strings", (t) => {
+  it("rejects an app defined as a list", (t) => {
     const box = createSandbox();
     try {
       expectExit(t);
-      const path = box.file("cfg.yaml", "apps:\n  api:\n    - 1\n");
+      const path = box.file("cfg.yaml", "apps:\n  api:\n    - A=1\n");
       assert.throws(() => loadProjectFile(path), ExitError);
     } finally {
       box.restore();
     }
   });
 
-  it("accepts an app defined as a scalar map", (t) => {
+  it("accepts an app defined as a scalar map", () => {
     const box = createSandbox();
     try {
       const path = box.file(
@@ -179,7 +179,7 @@ describe("loadProjectFile", () => {
         "apps:\n  api:\n    NODE_ENV: production\n    PORT: 3000\n    DEBUG: true\n"
       );
       const config = loadProjectFile(path);
-      assert.deepEqual(config.apps.api, {
+      assert.deepEqual(config.apps!.api, {
         NODE_ENV: "production",
         PORT: 3000,
         DEBUG: true,
@@ -203,7 +203,7 @@ describe("loadProjectFile", () => {
     }
   });
 
-  it("accepts a config that extends another and omits apps", (t) => {
+  it("accepts a config that extends another and omits apps", () => {
     const box = createSandbox();
     try {
       const path = box.file("cfg.yaml", "extends: base.yaml\noutput: '.env'\n");
@@ -219,7 +219,7 @@ describe("loadProjectFile", () => {
     const box = createSandbox();
     try {
       expectExit(t);
-      const path = box.file("cfg.yaml", "extends: 5\napps:\n  api:\n    - A=1\n");
+      const path = box.file("cfg.yaml", "extends: 5\napps:\n  api:\n    A: 1\n");
       assert.throws(() => loadProjectFile(path), ExitError);
     } finally {
       box.restore();
@@ -230,7 +230,7 @@ describe("loadProjectFile", () => {
     const box = createSandbox();
     try {
       expectExit(t);
-      const path = box.file("cfg.yaml", "extends:\n  - 1\napps:\n  api:\n    - A=1\n");
+      const path = box.file("cfg.yaml", "extends:\n  - 1\napps:\n  api:\n    A: 1\n");
       assert.throws(() => loadProjectFile(path), ExitError);
     } finally {
       box.restore();

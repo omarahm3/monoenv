@@ -6,8 +6,8 @@ import {
   mergeVariables,
   prepareMultipleEnvFiles,
   prepareSingleEnvFile,
-} from "../src/utils/parser";
-import type { ProjectMap, VariablesMap } from "../src/types";
+} from "../src/utils/parser.ts";
+import type { ProjectMap, VariablesMap } from "../src/types/index.ts";
 
 const project = (apps: ProjectMap["apps"]): ProjectMap => ({ apps });
 
@@ -20,89 +20,18 @@ const vars = (entries: Record<string, Record<string, string>>): VariablesMap => 
 };
 
 describe("createProjectMap", () => {
-  it("parses KEY=value entries into a per-app map", () => {
+  it("reads variables from a native YAML map", () => {
     const map = createProjectMap(
       project({
-        api: ['NODE_ENV="production"', "PORT=3000"],
-        web: ["VITE_API_URL=localhost:5000"],
+        api: { NODE_ENV: "production", HOST: "0.0.0.0" },
+        web: { VITE_API_URL: "localhost:5000" },
       })
     );
 
     assert.deepEqual([...map.keys()], ["api", "web"]);
     assert.equal(map.get("api")!.get("NODE_ENV"), "production");
-    assert.equal(map.get("api")!.get("PORT"), "3000");
-    assert.equal(map.get("web")!.get("VITE_API_URL"), "localhost:5000");
-  });
-
-  it("skips apps whose value is not an array", () => {
-    const map = createProjectMap(project({ broken: null as unknown as string[] }));
-    assert.equal(map.has("broken"), false);
-  });
-
-  it("skips apps with an empty variable list", () => {
-    const map = createProjectMap(project({ empty: [] }));
-    assert.equal(map.has("empty"), false);
-  });
-
-  it("ignores entries without an '=' separator", () => {
-    const map = createProjectMap(project({ api: ["NOT_A_PAIR", "OK=1"] }));
-    assert.deepEqual([...map.get("api")!.entries()], [["OK", "1"]]);
-  });
-
-  it("returns an empty map when apps is omitted", () => {
-    const map = createProjectMap({} as ProjectMap);
-    assert.equal(map.size, 0);
-  });
-});
-
-describe("createProjectMap (list-form value parsing)", () => {
-  const value = (entry: string): string =>
-    createProjectMap(project({ api: [entry] })).get("api")!.get("KEY")!;
-
-  it("keeps unquoted values verbatim, including '=' and ':'", () => {
-    assert.equal(value("KEY=postgres://u:p@host:5432/db"), "postgres://u:p@host:5432/db");
-  });
-
-  it("strips surrounding double quotes", () => {
-    assert.equal(value('KEY="hello world"'), "hello world");
-  });
-
-  it("treats single-quoted values as literal (no unescaping)", () => {
-    assert.equal(value("KEY='a\\nb'"), "a\\nb");
-  });
-
-  it("unescapes \\n, \\r, and \\t inside double quotes", () => {
-    assert.equal(value('KEY="a\\nb\\rc\\td"'), "a\nb\rc\td");
-  });
-
-  it("unescapes escaped quotes and backslashes inside double quotes", () => {
-    assert.equal(value('KEY="a\\"b\\\\c"'), 'a"b\\c');
-  });
-
-  it("preserves unrecognized escape sequences", () => {
-    assert.equal(value('KEY="a\\xb"'), "a\\xb");
-  });
-
-  it("yields an empty string for an empty value", () => {
-    assert.equal(value("KEY="), "");
-  });
-
-  it("leaves a value with an unmatched leading quote unchanged", () => {
-    assert.equal(value('KEY="unterminated'), '"unterminated');
-  });
-
-  it("preserves a trailing backslash", () => {
-    assert.equal(value('KEY="ab\\"'), "ab\\");
-  });
-});
-
-describe("createProjectMap (map form)", () => {
-  it("reads variables from a native YAML map", () => {
-    const map = createProjectMap(
-      project({ api: { NODE_ENV: "production", HOST: "0.0.0.0" } })
-    );
-    assert.equal(map.get("api")!.get("NODE_ENV"), "production");
     assert.equal(map.get("api")!.get("HOST"), "0.0.0.0");
+    assert.equal(map.get("web")!.get("VITE_API_URL"), "localhost:5000");
   });
 
   it("coerces number, boolean, and null scalars to strings", () => {
@@ -120,16 +49,15 @@ describe("createProjectMap (map form)", () => {
   });
 
   it("skips apps whose value is null", () => {
-    const map = createProjectMap(project({ broken: null as unknown as string[] }));
+    const map = createProjectMap(
+      project({ broken: null as unknown as Record<string, never> })
+    );
     assert.equal(map.has("broken"), false);
   });
 
-  it("supports list and map forms in the same config", () => {
-    const map = createProjectMap(
-      project({ api: { PORT: 3000 }, worker: ['LOG_LEVEL="info"'] })
-    );
-    assert.equal(map.get("api")!.get("PORT"), "3000");
-    assert.equal(map.get("worker")!.get("LOG_LEVEL"), "info");
+  it("returns an empty map when apps is omitted", () => {
+    const map = createProjectMap({} as ProjectMap);
+    assert.equal(map.size, 0);
   });
 });
 

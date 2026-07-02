@@ -1,8 +1,8 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
-import monoenv, { loadEnv, loadEnvFromConfigFile } from "../src/index";
-import { createSandbox, ExitError } from "./helpers";
+import monoenv, { loadEnv, loadEnvFromConfigFile } from "../src/index.ts";
+import { createSandbox, ExitError } from "./helpers.ts";
 
 function expectExit(t: any) {
   const exit = t.mock.method(process, "exit", (code?: number) => {
@@ -35,7 +35,7 @@ describe("loadEnv", () => {
     try {
       box.file(
         ".monoenv.yaml",
-        "shared: true\noverwrite: true\napps:\n  api:\n    - A=1\n"
+        "shared: true\noverwrite: true\napps:\n  api:\n    A: 1\n"
       );
       loadEnv();
       assert.equal(readFileSync(box.dir + "/.env", "utf-8"), 'A="1"\n');
@@ -51,7 +51,7 @@ describe("loadEnvFromConfigFile", () => {
     try {
       box.file(
         "custom.yaml",
-        "shared: true\noverwrite: true\napps:\n  api:\n    - A=1\n"
+        "shared: true\noverwrite: true\napps:\n  api:\n    A: 1\n"
       );
       loadEnvFromConfigFile("custom.yaml");
       assert.equal(readFileSync(box.dir + "/.env", "utf-8"), 'A="1"\n');
@@ -65,7 +65,7 @@ describe("loadEnvFromConfigFile", () => {
     try {
       box.file(
         ".monoenv.yaml",
-        "shared: true\noverwrite: true\napps:\n  api:\n    - A=1\n"
+        "shared: true\noverwrite: true\napps:\n  api:\n    A: 1\n"
       );
       loadEnvFromConfigFile(undefined);
       assert.equal(readFileSync(box.dir + "/.env", "utf-8"), 'A="1"\n');

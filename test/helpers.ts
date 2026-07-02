@@ -28,7 +28,10 @@ export function createSandbox(): Sandbox {
 }
 
 export class ExitError extends Error {
-  constructor(public readonly code?: number) {
+  readonly code?: number;
+
+  constructor(code?: number) {
     super(`process.exit(${code})`);
+    this.code = code;
   }
 }

@@ -132,17 +132,6 @@ apps:
     VITE_API_URL: localhost:3000
 ```
 
-> The legacy list form (`- KEY=value` strings) is still supported for backward
-> compatibility, and you can even mix both styles across apps in the same file:
->
-> ```yaml
-> apps:
->   api: # map form
->     NODE_ENV: production
->   worker: # list form
->     - LOG_LEVEL="info"
-> ```
-
 now you can use monoenv in by calling it in your before running your development script in `package.json`:
 
 ```json
@@ -236,7 +225,7 @@ monoenv -c .monoenv.prod.yaml
 
 Although not really recommended and is not its purpose, just like you're calling `dotenv.config()` as early as possible in your application, you can call `monoenv.loadEnv` or `monoenv.loadEnvFromConfigFile` **before** calling `dotenv.config` to parse and create the needed dotenv files.
 
-The package ships both ESM and CommonJS builds, so either module system works:
+monoenv is an ESM-only, modern package (Node.js >= 24):
 
 ```typescript
 import monoenv from "monoenv";
@@ -244,11 +233,6 @@ import * as dotenv from "dotenv";
 monoenv.loadEnvFromConfigFile(".monoenv.yaml");
 // monoenv.loadEnv(); // To load .monoenv.yaml|yml file by default
 dotenv.config();
-```
-
-```javascript
-const monoenv = require("monoenv");
-require("dotenv").config();
 ```
 
 # Use case

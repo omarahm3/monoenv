@@ -8,24 +8,20 @@
     "lib",
     "test"
   ],
-  "ts-node": {
-    "transpileOnly": true,
-    "experimentalResolver": true
-  },
   "compilerOptions": {
     "lib": [
-      "ESNext",
+      "ESNext"
     ],
     "target": "ESNext",
     "types": ["node"],
-    "module": "node16",
-    "allowJs": false,
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
     "declaration": true,
-    "emitDeclarationOnly": false,
+    "declarationMap": true,
     "rootDir": "src",
     "outDir": "lib",
-    "declarationMap": true,
-    "moduleResolution": "node16",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,

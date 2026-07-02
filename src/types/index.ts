@@ -2,7 +2,7 @@ export type ExtYaml = "yaml" | "yml";
 export type VariablesMap = Map<string, Map<string, string>>;
 
 export type Scalar = string | number | boolean | null;
-export type AppVariables = string[] | Record<string, Scalar>;
+export type AppVariables = Record<string, Scalar>;
 
 export interface ProjectFile {
   path: string;
