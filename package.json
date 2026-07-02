@@ -14,14 +14,12 @@
   "scripts": {
     "build": "tsc",
     "test": "ts-node ./src/bin/run.ts",
-    "prepublish": "npm run build"
+    "prepublishOnly": "npm run build"
   },
   "files": [
     "./lib/**/*"
   ],
   "keywords": [],
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
     "@types/minimist": "^1.2.2",
     "@types/node": "^18.15.8",
@@ -29,6 +27,7 @@
     "typescript": "^5.0.2"
   },
   "dependencies": {
+    "dotenv": "^17.4.2",
     "minimist": "^1.2.8",
     "yaml": "^2.2.1"
   }

@@ -1,26 +1,22 @@
+import { parse } from "dotenv";
 import { ProjectMap, EnvFileOptions } from "../types";
 
-function parseVaraibles(variables: string[]) {
-  const variablesMap = new Map<string, string>();
+function parseVariables(variables: string[]) {
+  const parsed = parse(variables.join("\n"));
+  return new Map<string, string>(Object.entries(parsed));
+}
 
-  for (const variable of variables) {
-    const splitted = variable.split("=");
-
-    if (splitted.length < 2) {
-      continue;
-    }
-
-    const key = splitted.shift();
-
-    if (!key) {
-      continue;
-    }
-
-    const value = splitted.join("=").replaceAll('"', "");
-    variablesMap.set(key, value);
+function serialize(key: string, value: string) {
+  if (value.includes('"') && !value.includes("'")) {
+    return `${key}='${value}'\n`;
   }
 
-  return variablesMap;
+  const escaped = value
+    .replaceAll("\n", "\\n")
+    .replaceAll("\r", "\\r")
+    .replaceAll('"', '\\"');
+
+  return `${key}="${escaped}"\n`;
 }
 
 export function createProjectMap(raw: ProjectMap) {
@@ -34,24 +30,31 @@ export function createProjectMap(raw: ProjectMap) {
       continue;
     }
 
-    map.set(app, parseVaraibles(variables));
+    map.set(app, parseVariables(variables));
   }
 
   return map;
 }
 
 export function prepareSingleEnvFile(opts: EnvFileOptions) {
-  const keys = new Set<string>();
+  const seen = new Map<string, string>();
   let content = "";
 
-  for (const [_, variables] of opts.variables) {
+  for (const [app, variables] of opts.variables) {
     for (const [key, value] of variables) {
-      if (keys.has(key)) {
+      const existing = seen.get(key);
+
+      if (existing !== undefined) {
+        if (existing !== value) {
+          console.warn(
+            `[ ${key} ] is defined multiple times with different values, keeping the first one and ignoring the value from [ ${app} ]`
+          );
+        }
         continue;
       }
 
-      content += `${key}="${value}"\n`;
-      keys.add(key);
+      content += serialize(key, value);
+      seen.set(key, value);
     }
   }
 
@@ -64,7 +67,7 @@ export function prepareMultipleEnvFiles(opts: EnvFileOptions) {
   for (const [app, variables] of opts.variables) {
     let content = "";
     for (const [key, value] of variables) {
-      content += `${key}="${value}"\n`;
+      content += serialize(key, value);
     }
     files.set(app, content);
   }

@@ -149,10 +149,10 @@ HOST="0.0.0.0"
 LOG_LEVEL="info"
 JWT_SECRET="test"
 DATABASE_URL="postgres://postgres:postgres@localhost:5432/test"
-NODE_ENV="production"
-NODE_ENV="production"
 VITE_API_URL="localhost:3000"
 ```
+
+When the same variable is defined by more than one app, the first value wins in the shared file and the duplicates are dropped. If two apps set the same key to *different* values, monoenv keeps the first and prints a warning so you're aware the later value was ignored.
 
 You can always use different name for your monoenv config file, then you can supply that config file as such:
 
