@@ -92,4 +92,37 @@ describe("processProjectFile", () => {
       box.restore();
     }
   });
+
+  it("renders a map-form config and round-trips tricky values", () => {
+    const box = createSandbox();
+    try {
+      const path = box.file(
+        "cfg.yaml",
+        [
+          "shared: true",
+          "overwrite: true",
+          "apps:",
+          "  api:",
+          "    NODE_ENV: production",
+          "    PORT: 3000",
+          '    DATABASE_URL: postgres://u:p@host/db?opt="x"',
+        ].join("\n")
+      );
+
+      processProjectFile(path);
+
+      const env = readFileSync(box.dir + "/.env", "utf-8");
+      assert.equal(
+        env,
+        [
+          'NODE_ENV="production"',
+          'PORT="3000"',
+          `DATABASE_URL='postgres://u:p@host/db?opt="x"'`,
+          "",
+        ].join("\n")
+      );
+    } finally {
+      box.restore();
+    }
+  });
 });

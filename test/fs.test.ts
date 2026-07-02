@@ -169,6 +169,38 @@ describe("loadProjectFile", () => {
       box.restore();
     }
   });
+
+  it("accepts an app defined as a scalar map", (t) => {
+    const box = createSandbox();
+    try {
+      const path = box.file(
+        "cfg.yaml",
+        "apps:\n  api:\n    NODE_ENV: production\n    PORT: 3000\n    DEBUG: true\n"
+      );
+      const config = loadProjectFile(path);
+      assert.deepEqual(config.apps.api, {
+        NODE_ENV: "production",
+        PORT: 3000,
+        DEBUG: true,
+      });
+    } finally {
+      box.restore();
+    }
+  });
+
+  it("rejects a map variable whose value is not a scalar", (t) => {
+    const box = createSandbox();
+    try {
+      expectExit(t);
+      const path = box.file(
+        "cfg.yaml",
+        "apps:\n  api:\n    NESTED:\n      - 1\n"
+      );
+      assert.throws(() => loadProjectFile(path), ExitError);
+    } finally {
+      box.restore();
+    }
+  });
 });
 
 describe("fileExists", () => {

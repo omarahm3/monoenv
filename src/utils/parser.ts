@@ -1,9 +1,19 @@
 import { parse } from "dotenv";
-import { ProjectMap, EnvFileOptions } from "../types";
+import { AppVariables, EnvFileOptions, ProjectMap, Scalar } from "../types";
 
 function parseVariables(variables: string[]) {
   const parsed = parse(variables.join("\n"));
   return new Map<string, string>(Object.entries(parsed));
+}
+
+function mapVariables(variables: Record<string, Scalar>) {
+  const result = new Map<string, string>();
+
+  for (const [key, value] of Object.entries(variables)) {
+    result.set(key, value == null ? "" : String(value));
+  }
+
+  return result;
 }
 
 function serialize(key: string, value: string) {
@@ -24,13 +34,18 @@ export function createProjectMap(raw: ProjectMap) {
   const apps = raw.apps;
 
   for (const app in apps) {
-    const variables = apps[app];
+    const variables: AppVariables = apps[app];
 
-    if (!Array.isArray(variables) || !variables.length) {
+    if (Array.isArray(variables)) {
+      if (variables.length) {
+        map.set(app, parseVariables(variables));
+      }
       continue;
     }
 
-    map.set(app, parseVariables(variables));
+    if (variables && Object.keys(variables).length) {
+      map.set(app, mapVariables(variables));
+    }
   }
 
   return map;

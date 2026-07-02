@@ -48,6 +48,43 @@ describe("createProjectMap", () => {
   });
 });
 
+describe("createProjectMap (map form)", () => {
+  it("reads variables from a native YAML map", () => {
+    const map = createProjectMap(
+      project({ api: { NODE_ENV: "production", HOST: "0.0.0.0" } })
+    );
+    assert.equal(map.get("api")!.get("NODE_ENV"), "production");
+    assert.equal(map.get("api")!.get("HOST"), "0.0.0.0");
+  });
+
+  it("coerces number, boolean, and null scalars to strings", () => {
+    const map = createProjectMap(
+      project({ api: { PORT: 3000, DEBUG: true, EMPTY: null } })
+    );
+    assert.equal(map.get("api")!.get("PORT"), "3000");
+    assert.equal(map.get("api")!.get("DEBUG"), "true");
+    assert.equal(map.get("api")!.get("EMPTY"), "");
+  });
+
+  it("skips apps with an empty map", () => {
+    const map = createProjectMap(project({ empty: {} }));
+    assert.equal(map.has("empty"), false);
+  });
+
+  it("skips apps whose value is null", () => {
+    const map = createProjectMap(project({ broken: null as unknown as string[] }));
+    assert.equal(map.has("broken"), false);
+  });
+
+  it("supports list and map forms in the same config", () => {
+    const map = createProjectMap(
+      project({ api: { PORT: 3000 }, worker: ['LOG_LEVEL="info"'] })
+    );
+    assert.equal(map.get("api")!.get("PORT"), "3000");
+    assert.equal(map.get("worker")!.get("LOG_LEVEL"), "info");
+  });
+});
+
 describe("prepareMultipleEnvFiles", () => {
   it("serializes plain values with double quotes", () => {
     const files = prepareMultipleEnvFiles({

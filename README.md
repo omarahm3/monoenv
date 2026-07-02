@@ -105,7 +105,8 @@ So the reason i created this so i don't worry more about `.env` files no more, i
 
 ## Usage
 
-Create a `.monoenv.yaml` file in your project root directory:
+Create a `.monoenv.yaml` file in your project root directory. Each app's variables are
+written as a plain YAML map, so YAML handles the typing, quoting, and escaping for you:
 
 ```yaml
 shared: true # set true if you want to combine all the environment variables in a single `.env` file
@@ -116,20 +117,31 @@ output: '.env' # set the output file for the generated application environment f
 
 apps:
   api:
-    - NODE_ENV="production"
-    - API_PORT="3000"
-    - HOST="0.0.0.0"
-    - LOG_LEVEL="info"
-    - JWT_SECRET="test"
-    - DATABASE_URL="postgres://postgres:postgres@localhost:5432/test"
-    
+    NODE_ENV: production
+    API_PORT: 3000
+    HOST: 0.0.0.0
+    LOG_LEVEL: info
+    JWT_SECRET: test
+    DATABASE_URL: postgres://postgres:postgres@localhost:5432/test
+
   uploader:
-    - NODE_ENV="production"
+    NODE_ENV: production
 
   web:
-    - NODE_ENV="production"
-    - VITE_API_URL=localhost:3000
+    NODE_ENV: production
+    VITE_API_URL: localhost:3000
 ```
+
+> The legacy list form (`- KEY=value` strings) is still supported for backward
+> compatibility, and you can even mix both styles across apps in the same file:
+>
+> ```yaml
+> apps:
+>   api: # map form
+>     NODE_ENV: production
+>   worker: # list form
+>     - LOG_LEVEL="info"
+> ```
 
 now you can use monoenv in by calling it in your before running your development script in `package.json`:
 

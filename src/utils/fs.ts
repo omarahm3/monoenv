@@ -25,6 +25,15 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function isScalar(value: unknown): boolean {
+  return (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  );
+}
+
 function validateProjectFile(raw: unknown, path: string): ProjectMap {
   if (!isPlainObject(raw)) {
     invalidConfig(path, "expected a YAML mapping at the root");
@@ -45,7 +54,7 @@ function validateProjectFile(raw: unknown, path: string): ProjectMap {
   if (!isPlainObject(raw.apps)) {
     invalidConfig(
       path,
-      '"apps" is required and must map each app name to a list of "KEY=value" strings'
+      '"apps" is required and must map each app name to its variables'
     );
   }
 
@@ -54,12 +63,29 @@ function validateProjectFile(raw: unknown, path: string): ProjectMap {
       continue;
     }
 
-    if (
-      !Array.isArray(variables) ||
-      variables.some((entry) => typeof entry !== "string")
-    ) {
-      invalidConfig(path, `app "${app}" must be a list of "KEY=value" strings`);
+    if (Array.isArray(variables)) {
+      if (variables.some((entry) => typeof entry !== "string")) {
+        invalidConfig(path, `app "${app}" list entries must be "KEY=value" strings`);
+      }
+      continue;
     }
+
+    if (isPlainObject(variables)) {
+      for (const [key, value] of Object.entries(variables)) {
+        if (!isScalar(value)) {
+          invalidConfig(
+            path,
+            `app "${app}" variable "${key}" must be a string, number, boolean, or null`
+          );
+        }
+      }
+      continue;
+    }
+
+    invalidConfig(
+      path,
+      `app "${app}" must be a list of "KEY=value" strings or a map of variables`
+    );
   }
 
   return raw as unknown as ProjectMap;
