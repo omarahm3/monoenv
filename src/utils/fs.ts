@@ -6,7 +6,7 @@ import {
   ProjectMap,
   WriteEnvFileOptions,
 } from "../types";
-import { resolve } from "path";
+import { dirname, resolve } from "path";
 
 const DEFAULT_PROJECT_FILE = ".monoenv";
 
@@ -14,6 +14,39 @@ export function loadProjectFile(path: string): ProjectMap {
   const variablesFile = fs.readFileSync(path, "utf-8");
   const parsed = yaml.parseDocument(variablesFile).toJSON();
   return validateProjectFile(parsed, path);
+}
+
+export function loadConfigChain(path: string): ProjectMap[] {
+  return resolveChain(resolvePath(path), []);
+}
+
+function normalizeExtends(value: string | string[] | undefined): string[] {
+  if (value === undefined) {
+    return [];
+  }
+
+  return Array.isArray(value) ? value : [value];
+}
+
+function resolveChain(absPath: string, ancestors: string[]): ProjectMap[] {
+  if (ancestors.includes(absPath)) {
+    invalidConfig(absPath, 'circular "extends" reference');
+  }
+
+  if (!fileExists(absPath)) {
+    invalidConfig(absPath, "config file not found");
+  }
+
+  const config = loadProjectFile(absPath);
+  const baseDir = dirname(absPath);
+  const chain: ProjectMap[] = [];
+
+  for (const base of normalizeExtends(config.extends)) {
+    chain.push(...resolveChain(resolve(baseDir, base), [...ancestors, absPath]));
+  }
+
+  chain.push(config);
+  return chain;
 }
 
 function invalidConfig(path: string, message: string): never {
@@ -51,40 +84,54 @@ function validateProjectFile(raw: unknown, path: string): ProjectMap {
     }
   }
 
-  if (!isPlainObject(raw.apps)) {
-    invalidConfig(
-      path,
-      '"apps" is required and must map each app name to its variables'
-    );
+  if (raw.extends !== undefined) {
+    const bases = Array.isArray(raw.extends) ? raw.extends : [raw.extends];
+    if (
+      (!Array.isArray(raw.extends) && typeof raw.extends !== "string") ||
+      bases.some((base) => typeof base !== "string")
+    ) {
+      invalidConfig(path, '"extends" must be a string or an array of strings');
+    }
   }
 
-  for (const [app, variables] of Object.entries(raw.apps)) {
-    if (variables == null) {
-      continue;
+  if (raw.apps !== undefined) {
+    if (!isPlainObject(raw.apps)) {
+      invalidConfig(path, '"apps" must map each app name to its variables');
     }
 
-    if (Array.isArray(variables)) {
-      if (variables.some((entry) => typeof entry !== "string")) {
-        invalidConfig(path, `app "${app}" list entries must be "KEY=value" strings`);
+    for (const [app, variables] of Object.entries(raw.apps)) {
+      if (variables == null) {
+        continue;
       }
-      continue;
-    }
 
-    if (isPlainObject(variables)) {
-      for (const [key, value] of Object.entries(variables)) {
-        if (!isScalar(value)) {
-          invalidConfig(
-            path,
-            `app "${app}" variable "${key}" must be a string, number, boolean, or null`
-          );
+      if (Array.isArray(variables)) {
+        if (variables.some((entry) => typeof entry !== "string")) {
+          invalidConfig(path, `app "${app}" list entries must be "KEY=value" strings`);
         }
+        continue;
       }
-      continue;
-    }
 
+      if (isPlainObject(variables)) {
+        for (const [key, value] of Object.entries(variables)) {
+          if (!isScalar(value)) {
+            invalidConfig(
+              path,
+              `app "${app}" variable "${key}" must be a string, number, boolean, or null`
+            );
+          }
+        }
+        continue;
+      }
+
+      invalidConfig(
+        path,
+        `app "${app}" must be a list of "KEY=value" strings or a map of variables`
+      );
+    }
+  } else if (raw.extends === undefined) {
     invalidConfig(
       path,
-      `app "${app}" must be a list of "KEY=value" strings or a map of variables`
+      '"apps" is required unless the config extends another config'
     );
   }
 

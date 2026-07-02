@@ -10,6 +10,7 @@ export interface ProjectFile {
 }
 
 export interface ProjectMap {
+  extends?: string | string[];
   shared?: boolean;
   overwrite?: boolean;
   expand?: boolean;
@@ -17,7 +18,7 @@ export interface ProjectMap {
   prefix?: string;
   postfix?: string;
 
-  apps: {
+  apps?: {
     [key: string]: AppVariables;
   };
 }

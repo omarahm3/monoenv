@@ -196,6 +196,42 @@ apps:
 - Escape a literal with a backslash: `\${NOT_A_REF}` stays `${NOT_A_REF}`.
 - References only see the current app's variables — they do not cross into other apps.
 
+## Extending configs
+
+Use `extends` to build environment-specific configs on top of a shared base instead of
+duplicating keys across `.monoenv.dev.yaml` and `.monoenv.prod.yaml`. Paths are resolved
+relative to the extending file.
+
+```yaml
+# .monoenv.base.yaml
+shared: true
+apps:
+  api:
+    NODE_ENV: development
+    PORT: 3000
+    HOST: localhost
+```
+
+```yaml
+# .monoenv.prod.yaml
+extends: .monoenv.base.yaml
+apps:
+  api:
+    NODE_ENV: production   # override
+    PORT: 8080             # override
+    # HOST is inherited from the base
+```
+
+```bash
+monoenv -c .monoenv.prod.yaml
+```
+
+- Options (`shared`, `expand`, `output`, ...) and per-app variables are merged, with the
+  extending file taking precedence, key by key.
+- `extends` may be a single path or a list (`extends: [a.yaml, b.yaml]`); later entries win.
+- Interpolation runs after merging, so a value can reference a variable inherited from a base.
+- A config that only extends may omit `apps` entirely.
+
 ## In code
 
 Although not really recommended and is not its purpose, just like you're calling `dotenv.config()` as early as possible in your application, you can call `monoenv.loadEnv` or `monoenv.loadEnvFromConfigFile` **before** calling `dotenv.config` to parse and create the needed dotenv files.

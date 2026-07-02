@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import {
   fileExists,
   getProjectFile,
+  loadConfigChain,
   loadProjectFile,
   writeEnvFile,
 } from "../src/utils/fs";
@@ -197,6 +198,95 @@ describe("loadProjectFile", () => {
         "apps:\n  api:\n    NESTED:\n      - 1\n"
       );
       assert.throws(() => loadProjectFile(path), ExitError);
+    } finally {
+      box.restore();
+    }
+  });
+
+  it("accepts a config that extends another and omits apps", (t) => {
+    const box = createSandbox();
+    try {
+      const path = box.file("cfg.yaml", "extends: base.yaml\noutput: '.env'\n");
+      const config = loadProjectFile(path);
+      assert.equal(config.extends, "base.yaml");
+      assert.equal(config.apps, undefined);
+    } finally {
+      box.restore();
+    }
+  });
+
+  it("rejects an extends value that is not a string or list", (t) => {
+    const box = createSandbox();
+    try {
+      expectExit(t);
+      const path = box.file("cfg.yaml", "extends: 5\napps:\n  api:\n    - A=1\n");
+      assert.throws(() => loadProjectFile(path), ExitError);
+    } finally {
+      box.restore();
+    }
+  });
+
+  it("rejects an extends list containing non-strings", (t) => {
+    const box = createSandbox();
+    try {
+      expectExit(t);
+      const path = box.file("cfg.yaml", "extends:\n  - 1\napps:\n  api:\n    - A=1\n");
+      assert.throws(() => loadProjectFile(path), ExitError);
+    } finally {
+      box.restore();
+    }
+  });
+});
+
+describe("loadConfigChain", () => {
+  it("returns the chain in base-to-leaf order", () => {
+    const box = createSandbox();
+    try {
+      box.file("base.yaml", "shared: true\napps:\n  api:\n    A: 1\n");
+      box.file("prod.yaml", "extends: base.yaml\napps:\n  api:\n    A: 2\n");
+      const chain = loadConfigChain("prod.yaml");
+      assert.equal(chain.length, 2);
+      assert.equal(chain[0].shared, true);
+      assert.equal(chain[1].extends, "base.yaml");
+    } finally {
+      box.restore();
+    }
+  });
+
+  it("resolves an array of bases left to right before the leaf", () => {
+    const box = createSandbox();
+    try {
+      box.file("a.yaml", "apps:\n  api:\n    A: 1\n");
+      box.file("b.yaml", "apps:\n  api:\n    B: 2\n");
+      box.file("leaf.yaml", "extends:\n  - a.yaml\n  - b.yaml\napps:\n  api:\n    C: 3\n");
+      const chain = loadConfigChain("leaf.yaml");
+      assert.deepEqual(
+        chain.map((c) => Object.keys(c.apps!.api as Record<string, unknown>)[0]),
+        ["A", "B", "C"]
+      );
+    } finally {
+      box.restore();
+    }
+  });
+
+  it("exits on a circular extends reference", (t) => {
+    const box = createSandbox();
+    try {
+      expectExit(t);
+      box.file("a.yaml", "extends: b.yaml\napps:\n  api:\n    A: 1\n");
+      box.file("b.yaml", "extends: a.yaml\napps:\n  api:\n    B: 2\n");
+      assert.throws(() => loadConfigChain("a.yaml"), ExitError);
+    } finally {
+      box.restore();
+    }
+  });
+
+  it("exits when a referenced base file is missing", (t) => {
+    const box = createSandbox();
+    try {
+      expectExit(t);
+      box.file("leaf.yaml", "extends: missing.yaml\napps:\n  api:\n    A: 1\n");
+      assert.throws(() => loadConfigChain("leaf.yaml"), ExitError);
     } finally {
       box.restore();
     }

@@ -95,7 +95,7 @@ function serialize(key: string, value: string) {
 
 export function createProjectMap(raw: ProjectMap) {
   const map = new Map<string, Map<string, string>>();
-  const apps = raw.apps;
+  const apps = raw.apps ?? {};
 
   for (const app in apps) {
     const variables: AppVariables = apps[app];
@@ -113,6 +113,24 @@ export function createProjectMap(raw: ProjectMap) {
   }
 
   return map;
+}
+
+export function mergeVariables(layers: VariablesMap[]): VariablesMap {
+  const merged: VariablesMap = new Map();
+
+  for (const layer of layers) {
+    for (const [app, variables] of layer) {
+      const target = merged.get(app) ?? new Map<string, string>();
+
+      for (const [key, value] of variables) {
+        target.set(key, value);
+      }
+
+      merged.set(app, target);
+    }
+  }
+
+  return merged;
 }
 
 export function prepareSingleEnvFile(opts: EnvFileOptions) {

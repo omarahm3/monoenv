@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { processProjectFile } from "../src/processor";
 import { createSandbox } from "./helpers";
 
@@ -174,6 +174,73 @@ describe("processProjectFile", () => {
           `DATABASE_URL='postgres://u:p@host/db?opt="x"'`,
           "",
         ].join("\n")
+      );
+    } finally {
+      box.restore();
+    }
+  });
+
+  it("layers a base config with a per-env override via extends", () => {
+    const box = createSandbox();
+    try {
+      box.file(
+        "base.yaml",
+        [
+          "shared: true",
+          "overwrite: true",
+          "apps:",
+          "  api:",
+          "    NODE_ENV: development",
+          "    PORT: 3000",
+          "    HOST: localhost",
+        ].join("\n")
+      );
+      const path = box.file(
+        "prod.yaml",
+        [
+          "extends: base.yaml",
+          "apps:",
+          "  api:",
+          "    NODE_ENV: production",
+          "    PORT: 8080",
+        ].join("\n")
+      );
+
+      processProjectFile(path);
+
+      const env = readFileSync(box.dir + "/.env", "utf-8");
+      assert.match(env, /NODE_ENV="production"/); // overridden
+      assert.match(env, /PORT="8080"/); // overridden
+      assert.match(env, /HOST="localhost"/); // inherited from base
+    } finally {
+      box.restore();
+    }
+  });
+
+  it("resolves extends relative to the extending file and expands across layers", () => {
+    const box = createSandbox();
+    try {
+      mkdirSync(box.dir + "/config");
+      writeFileSync(
+        box.dir + "/config/base.yaml",
+        "shared: true\noverwrite: true\nexpand: true\napps:\n  api:\n    HOST: localhost\n",
+        "utf-8"
+      );
+      const path = box.file(
+        "config/app.yaml",
+        [
+          "extends: base.yaml",
+          "apps:",
+          "  api:",
+          "    URL: http://${HOST}:3000",
+        ].join("\n")
+      );
+
+      processProjectFile(path);
+
+      assert.match(
+        readFileSync(box.dir + "/.env", "utf-8"),
+        /URL="http:\/\/localhost:3000"/
       );
     } finally {
       box.restore();

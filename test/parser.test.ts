@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   createProjectMap,
   expandVariables,
+  mergeVariables,
   prepareMultipleEnvFiles,
   prepareSingleEnvFile,
 } from "../src/utils/parser";
@@ -46,6 +47,11 @@ describe("createProjectMap", () => {
   it("ignores entries without an '=' separator", () => {
     const map = createProjectMap(project({ api: ["NOT_A_PAIR", "OK=1"] }));
     assert.deepEqual([...map.get("api")!.entries()], [["OK", "1"]]);
+  });
+
+  it("returns an empty map when apps is omitted", () => {
+    const map = createProjectMap({} as ProjectMap);
+    assert.equal(map.size, 0);
   });
 });
 
@@ -258,5 +264,30 @@ describe("expandVariables", () => {
       vars({ api: { HOST: "localhost" }, web: { URL: "${HOST:-none}" } })
     );
     assert.equal(out.get("web")!.get("URL"), "none");
+  });
+});
+
+describe("mergeVariables", () => {
+  it("lets later layers override earlier keys per app", () => {
+    const merged = mergeVariables([
+      vars({ api: { NODE_ENV: "development", HOST: "localhost" } }),
+      vars({ api: { NODE_ENV: "production" } }),
+    ]);
+    assert.equal(merged.get("api")!.get("NODE_ENV"), "production");
+    assert.equal(merged.get("api")!.get("HOST"), "localhost");
+  });
+
+  it("unions apps across layers", () => {
+    const merged = mergeVariables([
+      vars({ api: { A: "1" } }),
+      vars({ web: { B: "2" } }),
+    ]);
+    assert.deepEqual([...merged.keys()], ["api", "web"]);
+    assert.equal(merged.get("api")!.get("A"), "1");
+    assert.equal(merged.get("web")!.get("B"), "2");
+  });
+
+  it("returns an empty map for no layers", () => {
+    assert.equal(mergeVariables([]).size, 0);
   });
 });
