@@ -9,7 +9,8 @@
     "test"
   ],
   "ts-node": {
-    "transpileOnly": true
+    "transpileOnly": true,
+    "experimentalResolver": true
   },
   "compilerOptions": {
     "lib": [

@@ -236,12 +236,19 @@ monoenv -c .monoenv.prod.yaml
 
 Although not really recommended and is not its purpose, just like you're calling `dotenv.config()` as early as possible in your application, you can call `monoenv.loadEnv` or `monoenv.loadEnvFromConfigFile` **before** calling `dotenv.config` to parse and create the needed dotenv files.
 
+The package ships both ESM and CommonJS builds, so either module system works:
+
 ```typescript
 import monoenv from "monoenv";
 import * as dotenv from "dotenv";
 monoenv.loadEnvFromConfigFile(".monoenv.yaml");
 // monoenv.loadEnv(); // To load .monoenv.yaml|yml file by default
 dotenv.config();
+```
+
+```javascript
+const monoenv = require("monoenv");
+require("dotenv").config();
 ```
 
 # Use case

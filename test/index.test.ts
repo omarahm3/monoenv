@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
-import { loadEnv, loadEnvFromConfigFile } from "../src/index";
+import monoenv, { loadEnv, loadEnvFromConfigFile } from "../src/index";
 import { createSandbox, ExitError } from "./helpers";
 
 function expectExit(t: any) {
@@ -11,6 +11,13 @@ function expectExit(t: any) {
   t.mock.method(console, "error", () => {});
   return exit;
 }
+
+describe("default export", () => {
+  it("bundles the public helpers", () => {
+    assert.equal(monoenv.loadEnv, loadEnv);
+    assert.equal(monoenv.loadEnvFromConfigFile, loadEnvFromConfigFile);
+  });
+});
 
 describe("loadEnv", () => {
   it("does nothing when no default config file exists", () => {

@@ -1,5 +1,5 @@
-import { processProjectFile } from "./processor";
-import { fileExists, getProjectFile } from "./utils/fs";
+import { processProjectFile } from "./processor.js";
+import { fileExists, getProjectFile } from "./utils/fs.js";
 
 export function loadEnv() {
   const projectFile = getProjectFile();
@@ -28,3 +28,5 @@ export function loadEnvFromConfigFile(projectPath: string | undefined) {
 
   processProjectFile(path);
 }
+
+export default { loadEnv, loadEnvFromConfigFile };

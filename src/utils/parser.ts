@@ -5,7 +5,7 @@ import {
   ProjectMap,
   Scalar,
   VariablesMap,
-} from "../types";
+} from "../types/index.js";
 
 const REFERENCE = /(\\*)\$\{([^}]+)\}/g;
 

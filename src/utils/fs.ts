@@ -5,7 +5,7 @@ import {
   ProjectFile,
   ProjectMap,
   WriteEnvFileOptions,
-} from "../types";
+} from "../types/index.js";
 import { dirname, resolve } from "path";
 
 const DEFAULT_PROJECT_FILE = ".monoenv";
