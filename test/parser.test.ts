@@ -55,6 +55,47 @@ describe("createProjectMap", () => {
   });
 });
 
+describe("createProjectMap (list-form value parsing)", () => {
+  const value = (entry: string): string =>
+    createProjectMap(project({ api: [entry] })).get("api")!.get("KEY")!;
+
+  it("keeps unquoted values verbatim, including '=' and ':'", () => {
+    assert.equal(value("KEY=postgres://u:p@host:5432/db"), "postgres://u:p@host:5432/db");
+  });
+
+  it("strips surrounding double quotes", () => {
+    assert.equal(value('KEY="hello world"'), "hello world");
+  });
+
+  it("treats single-quoted values as literal (no unescaping)", () => {
+    assert.equal(value("KEY='a\\nb'"), "a\\nb");
+  });
+
+  it("unescapes \\n, \\r, and \\t inside double quotes", () => {
+    assert.equal(value('KEY="a\\nb\\rc\\td"'), "a\nb\rc\td");
+  });
+
+  it("unescapes escaped quotes and backslashes inside double quotes", () => {
+    assert.equal(value('KEY="a\\"b\\\\c"'), 'a"b\\c');
+  });
+
+  it("preserves unrecognized escape sequences", () => {
+    assert.equal(value('KEY="a\\xb"'), "a\\xb");
+  });
+
+  it("yields an empty string for an empty value", () => {
+    assert.equal(value("KEY="), "");
+  });
+
+  it("leaves a value with an unmatched leading quote unchanged", () => {
+    assert.equal(value('KEY="unterminated'), '"unterminated');
+  });
+
+  it("preserves a trailing backslash", () => {
+    assert.equal(value('KEY="ab\\"'), "ab\\");
+  });
+});
+
 describe("createProjectMap (map form)", () => {
   it("reads variables from a native YAML map", () => {
     const map = createProjectMap(

@@ -1,4 +1,3 @@
-import { parse } from "dotenv";
 import {
   AppVariables,
   EnvFileOptions,
@@ -65,9 +64,65 @@ export function expandVariables(variables: VariablesMap): VariablesMap {
   return expanded;
 }
 
+function unescape(value: string) {
+  let result = "";
+
+  for (let i = 0; i < value.length; i++) {
+    if (value[i] === "\\" && i + 1 < value.length) {
+      const next = value[i + 1];
+      const replacement =
+        next === "n" ? "\n" : next === "r" ? "\r" : next === "t" ? "\t" : null;
+
+      if (replacement !== null) {
+        result += replacement;
+        i++;
+        continue;
+      }
+
+      if (next === "\\" || next === '"') {
+        result += next;
+        i++;
+        continue;
+      }
+    }
+
+    result += value[i];
+  }
+
+  return result;
+}
+
+function parseValue(raw: string) {
+  const quote = raw[0];
+
+  if (raw.length >= 2 && (quote === '"' || quote === "'") && raw.at(-1) === quote) {
+    const inner = raw.slice(1, -1);
+    return quote === '"' ? unescape(inner) : inner;
+  }
+
+  return raw;
+}
+
 function parseVariables(variables: string[]) {
-  const parsed = parse(variables.join("\n"));
-  return new Map<string, string>(Object.entries(parsed));
+  const result = new Map<string, string>();
+
+  for (const entry of variables) {
+    const separator = entry.indexOf("=");
+
+    if (separator < 1) {
+      continue;
+    }
+
+    const key = entry.slice(0, separator).trim();
+
+    if (!key) {
+      continue;
+    }
+
+    result.set(key, parseValue(entry.slice(separator + 1).trim()));
+  }
+
+  return result;
 }
 
 function mapVariables(variables: Record<string, Scalar>) {

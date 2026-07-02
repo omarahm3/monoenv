@@ -6,7 +6,7 @@
 
 Monoenv is a tool that helps you manage multiple dotenv files in a monorepo with ease in both development and production environments, with the goal of having a single source of truth yaml file that contains all of your environment variables for all of your projects that you can either combibne them under single `.env` file (usually for development) or have a multiple per-application `.env` file (usually for production).
 
-Package is depending on [`dotenv`](https://github.com/motdotla/dotenv) because you will need it to manage your generated `.env` file/s.
+Monoenv has no runtime dependency on [`dotenv`](https://github.com/motdotla/dotenv), but it pairs well with it: use `dotenv` in your applications to load the `.env` file/s that monoenv generates.
 
 ## Install
 

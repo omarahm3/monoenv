@@ -17,6 +17,7 @@
       "ESNext",
     ],
     "target": "ESNext",
+    "types": ["node"],
     "module": "node16",
     "allowJs": false,
     "declaration": true,
