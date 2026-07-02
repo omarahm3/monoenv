@@ -93,6 +93,60 @@ describe("processProjectFile", () => {
     }
   });
 
+  it("expands ${VAR} references when expand is enabled", () => {
+    const box = createSandbox();
+    try {
+      const path = box.file(
+        "cfg.yaml",
+        [
+          "shared: false",
+          "overwrite: true",
+          "expand: true",
+          "apps:",
+          "  api:",
+          "    HOST: localhost",
+          "    PORT: 3000",
+          "    BASE_URL: http://${HOST}:${PORT}",
+        ].join("\n")
+      );
+
+      processProjectFile(path);
+
+      assert.match(
+        readFileSync(box.dir + "/api", "utf-8"),
+        /BASE_URL="http:\/\/localhost:3000"/
+      );
+    } finally {
+      box.restore();
+    }
+  });
+
+  it("leaves ${VAR} references literal when expand is not enabled", () => {
+    const box = createSandbox();
+    try {
+      const path = box.file(
+        "cfg.yaml",
+        [
+          "shared: false",
+          "overwrite: true",
+          "apps:",
+          "  api:",
+          "    HOST: localhost",
+          "    BASE_URL: http://${HOST}",
+        ].join("\n")
+      );
+
+      processProjectFile(path);
+
+      assert.match(
+        readFileSync(box.dir + "/api", "utf-8"),
+        /BASE_URL="http:\/\/\$\{HOST\}"/
+      );
+    } finally {
+      box.restore();
+    }
+  });
+
   it("renders a map-form config and round-trips tricky values", () => {
     const box = createSandbox();
     try {

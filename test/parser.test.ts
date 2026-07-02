@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   createProjectMap,
+  expandVariables,
   prepareMultipleEnvFiles,
   prepareSingleEnvFile,
 } from "../src/utils/parser";
@@ -166,5 +167,96 @@ describe("prepareSingleEnvFile", () => {
       variables: vars({ api: { A: "1" }, web: { B: "2" } }),
     });
     assert.equal(out, 'A="1"\nB="2"\n');
+  });
+});
+
+describe("expandVariables", () => {
+  it("expands references to other variables in the same app", () => {
+    const out = expandVariables(
+      vars({
+        api: { HOST: "localhost", PORT: "3000", URL: "http://${HOST}:${PORT}" },
+      })
+    );
+    assert.equal(out.get("api")!.get("URL"), "http://localhost:3000");
+  });
+
+  it("falls back to process.env for unknown references", () => {
+    process.env.MONOENV_TEST_TOKEN = "sekret";
+    try {
+      const out = expandVariables(
+        vars({ api: { AUTH: "Bearer ${MONOENV_TEST_TOKEN}" } })
+      );
+      assert.equal(out.get("api")!.get("AUTH"), "Bearer sekret");
+    } finally {
+      delete process.env.MONOENV_TEST_TOKEN;
+    }
+  });
+
+  it("prefers an app variable over process.env of the same name", () => {
+    process.env.MONOENV_TEST_HOST = "from-env";
+    try {
+      const out = expandVariables(
+        vars({
+          api: { MONOENV_TEST_HOST: "from-config", URL: "${MONOENV_TEST_HOST}" },
+        })
+      );
+      assert.equal(out.get("api")!.get("URL"), "from-config");
+    } finally {
+      delete process.env.MONOENV_TEST_HOST;
+    }
+  });
+
+  it("uses the default when a reference is unset", () => {
+    const out = expandVariables(vars({ api: { PORT: "${MONOENV_UNSET:-8080}" } }));
+    assert.equal(out.get("api")!.get("PORT"), "8080");
+  });
+
+  it("resolves to an empty string when unset with no default", () => {
+    const out = expandVariables(vars({ api: { X: "a${MONOENV_UNSET}b" } }));
+    assert.equal(out.get("api")!.get("X"), "ab");
+  });
+
+  it("resolves references recursively", () => {
+    const out = expandVariables(
+      vars({ api: { A: "${B}", B: "${C}", C: "deep" } })
+    );
+    assert.equal(out.get("api")!.get("A"), "deep");
+  });
+
+  it("supports the KEY: ${KEY:-default} idiom, using the default when unset", () => {
+    const out = expandVariables(vars({ api: { LOG_LEVEL: "${LOG_LEVEL:-info}" } }));
+    assert.equal(out.get("api")!.get("LOG_LEVEL"), "info");
+  });
+
+  it("supports the KEY: ${KEY:-default} idiom, using process.env when set", () => {
+    process.env.MONOENV_TEST_LOG = "debug";
+    try {
+      const out = expandVariables(
+        vars({ api: { MONOENV_TEST_LOG: "${MONOENV_TEST_LOG:-info}" } })
+      );
+      assert.equal(out.get("api")!.get("MONOENV_TEST_LOG"), "debug");
+    } finally {
+      delete process.env.MONOENV_TEST_LOG;
+    }
+  });
+
+  it("breaks reference cycles instead of looping forever", () => {
+    const out = expandVariables(vars({ api: { A: "${B}", B: "${A}" } }));
+    assert.equal(out.get("api")!.get("A"), "");
+    assert.equal(out.get("api")!.get("B"), "");
+  });
+
+  it("keeps an escaped reference literal", () => {
+    const out = expandVariables(
+      vars({ api: { LITERAL: "price is \\${AMOUNT}" } })
+    );
+    assert.equal(out.get("api")!.get("LITERAL"), "price is ${AMOUNT}");
+  });
+
+  it("does not resolve variables across apps", () => {
+    const out = expandVariables(
+      vars({ api: { HOST: "localhost" }, web: { URL: "${HOST:-none}" } })
+    );
+    assert.equal(out.get("web")!.get("URL"), "none");
   });
 });

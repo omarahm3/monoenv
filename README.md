@@ -172,6 +172,30 @@ You can always use different name for your monoenv config file, then you can sup
 monoenv --config project.production.yaml
 ```
 
+## Interpolation
+
+Set `expand: true` to resolve `${VAR}` references in your values. References are
+resolved **per app**: monoenv looks in that app's own variables first, then falls back
+to `process.env` (handy for secrets or CI-provided values). It is opt-in so existing
+values that happen to contain `${...}` keep their literal meaning.
+
+```yaml
+expand: true
+
+apps:
+  api:
+    HOST: localhost
+    PORT: 3000
+    BASE_URL: http://${HOST}:${PORT}                 # -> http://localhost:3000
+    DATABASE_URL: postgres://user:${DB_PASSWORD}@db  # DB_PASSWORD comes from process.env
+    LOG_LEVEL: ${LOG_LEVEL:-info}                    # default when unset
+```
+
+- `${VAR:-default}` — use `default` when `VAR` is unset in both the app and `process.env`.
+- References resolve recursively, and reference cycles resolve to an empty string.
+- Escape a literal with a backslash: `\${NOT_A_REF}` stays `${NOT_A_REF}`.
+- References only see the current app's variables — they do not cross into other apps.
+
 ## In code
 
 Although not really recommended and is not its purpose, just like you're calling `dotenv.config()` as early as possible in your application, you can call `monoenv.loadEnv` or `monoenv.loadEnvFromConfigFile` **before** calling `dotenv.config` to parse and create the needed dotenv files.

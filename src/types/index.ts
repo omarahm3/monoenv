@@ -12,6 +12,7 @@ export interface ProjectFile {
 export interface ProjectMap {
   shared?: boolean;
   overwrite?: boolean;
+  expand?: boolean;
   output?: string;
   prefix?: string;
   postfix?: string;

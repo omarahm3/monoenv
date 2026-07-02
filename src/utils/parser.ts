@@ -1,5 +1,69 @@
 import { parse } from "dotenv";
-import { AppVariables, EnvFileOptions, ProjectMap, Scalar } from "../types";
+import {
+  AppVariables,
+  EnvFileOptions,
+  ProjectMap,
+  Scalar,
+  VariablesMap,
+} from "../types";
+
+const REFERENCE = /(\\*)\$\{([^}]+)\}/g;
+
+function resolveReference(
+  expression: string,
+  scope: Map<string, string>,
+  resolving: Set<string>
+): string {
+  const separator = expression.indexOf(":-");
+  const name = (separator >= 0 ? expression.slice(0, separator) : expression).trim();
+  const fallback = separator >= 0 ? expression.slice(separator + 2) : undefined;
+
+  if (scope.has(name) && !resolving.has(name)) {
+    resolving.add(name);
+    const expanded = expandValue(scope.get(name)!, scope, resolving);
+    resolving.delete(name);
+    return expanded;
+  }
+
+  const fromEnv = process.env[name];
+  if (fromEnv !== undefined) {
+    return fromEnv;
+  }
+
+  return fallback ?? "";
+}
+
+function expandValue(
+  raw: string,
+  scope: Map<string, string>,
+  resolving: Set<string>
+): string {
+  return raw.replace(REFERENCE, (_match, slashes: string, expression: string) => {
+    const prefix = "\\".repeat(Math.floor(slashes.length / 2));
+
+    if (slashes.length % 2 === 1) {
+      return `${prefix}\${${expression}}`;
+    }
+
+    return prefix + resolveReference(expression, scope, resolving);
+  });
+}
+
+export function expandVariables(variables: VariablesMap): VariablesMap {
+  const expanded: VariablesMap = new Map();
+
+  for (const [app, scope] of variables) {
+    const resolved = new Map<string, string>();
+
+    for (const [key, value] of scope) {
+      resolved.set(key, expandValue(value, scope, new Set([key])));
+    }
+
+    expanded.set(app, resolved);
+  }
+
+  return expanded;
+}
 
 function parseVariables(variables: string[]) {
   const parsed = parse(variables.join("\n"));

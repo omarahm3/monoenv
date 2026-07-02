@@ -39,7 +39,7 @@ function validateProjectFile(raw: unknown, path: string): ProjectMap {
     invalidConfig(path, "expected a YAML mapping at the root");
   }
 
-  for (const key of ["shared", "overwrite"] as const) {
+  for (const key of ["shared", "overwrite", "expand"] as const) {
     if (raw[key] !== undefined && typeof raw[key] !== "boolean") {
       invalidConfig(path, `"${key}" must be a boolean`);
     }

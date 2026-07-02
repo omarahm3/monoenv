@@ -2,6 +2,7 @@ import { ProjectMap, VariablesMap } from "./types";
 import { loadProjectFile, writeEnvFile } from "./utils/fs";
 import {
   createProjectMap,
+  expandVariables,
   prepareMultipleEnvFiles,
   prepareSingleEnvFile,
 } from "./utils/parser";
@@ -36,7 +37,8 @@ function processMultiple(project: ProjectMap, variables: VariablesMap) {
 
 export function processProjectFile(projectPath: string) {
   const project = loadProjectFile(projectPath);
-  const variables = createProjectMap(project);
+  const parsed = createProjectMap(project);
+  const variables = project.expand ? expandVariables(parsed) : parsed;
 
   if (project.shared) {
     return processShared(project, variables);
